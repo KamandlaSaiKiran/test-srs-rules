@@ -7,10 +7,10 @@ app.use(cors()); // Enable CORS
 app.use(express.json()); // Parse JSON bodies
 
 app.post('/rule', async (req, res) => {
-  const { displayName, dbCreds } = req.body;
+  const { name, dbCreds } = req.body;
   const { username, password, host, port, serviceName } = dbCreds;
 
-  if (!displayName || !username || !password || !host || !port || !serviceName) {
+  if (!name || !username || !password || !host || !port || !serviceName) {
     return res.status(400).json({ status: 'Invalid request: missing parameters' });
   }
 
@@ -25,8 +25,8 @@ app.post('/rule', async (req, res) => {
     });
 
     const result = await connection.execute(
-      `SELECT * FROM SRS_RULES WHERE RULE_NAME = :displayName`,
-      [displayName],
+      `SELECT * FROM SRS_RULES WHERE RULE_NAME = :name`,
+      [name],
       { outFormat: oracledb.OUT_FORMAT_OBJECT }
     );
 

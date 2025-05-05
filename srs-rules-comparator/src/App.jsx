@@ -62,29 +62,64 @@ function App() {
 
     return rulesArray.map((rule) => {
       let description = "";
+      const displayName = rule.display_name || '';
       if (rule.documentation) {
         const docContent =
           typeof rule.documentation === "string"
             ? rule.documentation
             : rule.documentation["#text"] || "";
-
+    
         const pMatches = Array.from(docContent.matchAll(/<p>([\s\S]*?)<\/p>/gi));
         const preMatches = Array.from(docContent.matchAll(/<pre>([\s\S]*?)<\/pre>/gi));
+        // const tableMatches = Array.from(docContent.matchAll(/<table[\s\S]*?<\/table>/gi));
+        let setNameTable = "";
+    // Find tables
+        const tableMatches = Array.from(docContent.matchAll(/<table[\s\S]*?<\/table>/gi));
+        if (tableMatches.length > 0) {
+      // Process the first table (or loop if you expect more)
+      const table = tableMatches[0][0];  // full table HTML
 
+      // Find the set_name row inside this table
+      const setNameRowMatch = table.match(
+        /<tr>[\s\S]*?<td[^>]*>\s*<i>\s*set_name\s*<\/i>\s*<\/td>[\s\S]*?<\/tr>/i
+      );
+
+      if (setNameRowMatch) {
+        // Only keep the <tr> for set_name
+        setNameTable = `<br/><table border="1" width="600">${setNameRowMatch[0].trim()}</table>`;
+      }
+    }
+      
         const combinedContent = [
           ...pMatches.map((m) => m[1].trim()),
           ...preMatches.map((m) => m[1].trim()),
+          // ...tableMatches.map((m) => m[0].trim()),
         ]
-          .filter((content) => content)
-          .join(" || ");
-
-        description = combinedContent;
+        .filter((content) => content)
+        .join(" ");
+          // .filter((content) => content)
+          // .join(" ");
+    
+        // description = combinedContent;
+        description = combinedContent + (setNameTable ? setNameTable : "");
+        // if (tableContent) {
+        //   combinedContent.push(tableContent);
+        // }
+    
+        // description = combinedContent
+        //   .filter((content) => content)
+        //   .join(" ");
       }
 
-      return {
-        displayName: rule.display_name,
-        description,
-      };
+      
+      const fullDescription = displayName
+      ? `<strong>${displayName}</strong><br/>${description}`
+      : description;
+  
+    return {
+      name: rule.name,
+      description: fullDescription,
+    };
     });
   };
 
@@ -96,7 +131,7 @@ function App() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              displayName: rule.displayName,
+              name: rule.name,
               dbCreds
             })
           });
@@ -131,15 +166,16 @@ function App() {
     const newRules = extractRules(newXml);
 
     const oldMap = new Map(
-      oldRules.map((r) => [r.displayName, r.description])
+      oldRules.map((r) => [r.name, r.description])  // 👈 use 'name' as key
     );
     const newMap = new Map(
-      newRules.map((r) => [r.displayName, r.description])
+      newRules.map((r) => [r.name, r.description])  // 👈 use 'name' as key
     );
-
-    const dropped = oldRules.filter((r) => !newMap.has(r.displayName));
-    const newOnes = newRules.filter((r) => !oldMap.has(r.displayName));
-    const matched = newRules.filter((r) => oldMap.has(r.displayName));
+    
+    const dropped = oldRules.filter((r) => !newMap.has(r.name));   // 👈 compare by 'name'
+    const newOnes = newRules.filter((r) => !oldMap.has(r.name));   // 👈 compare by 'name'
+    const matched = newRules.filter((r) => oldMap.has(r.name));    // 👈 compare by 'name'
+    
 
     setResults({ dropped: [], new: [], matched: [] });
     setEnrichedDropped([]);
@@ -164,13 +200,13 @@ function App() {
             .map(([key, val]) => `${key}: ${val}`)
             .join("\n");
         const desc = rule.description ? rule.description.replace(/[\r\n]+/g, ' ').replace(/"/g, '""') : '';
-        csvContent += `"${rule.displayName}","${desc}","${dbData}"\n`;
+        csvContent += `"${rule.name}","${desc}","${dbData}"\n`;
       });
     } else if (type === "new") {
       csvContent = "Rule Name,Description\n";
       data.forEach((rule) => {
         const desc = rule.description ? rule.description.replace(/[\r\n]+/g, ' ').replace(/"/g, '""') : '';
-        csvContent += `"${rule.displayName}","${desc}"\n`;
+        csvContent += `"${rule.name}","${desc}"\n`;
       });
     }
 
@@ -231,13 +267,13 @@ function App() {
     <tr className="border-2 border-gray-500">
       <th className="border-2 border-gray-500">Rule Name</th>
       <th className="border-2 border-gray-500">Description</th>
-      <th className="border-2 border-gray-500">DB Data</th>
+      <th className="border-2 border-gray-500 min-w-[300px]">DB Data</th>
     </tr>
   </thead>
   <tbody>
     {enrichedDropped.map((rule) => (
-      <tr key={rule.displayName} className="border-2 border-gray-500">
-        <td className="border-2 border-gray-500">{rule.displayName}</td>
+      <tr key={rule.name} className="border-2 border-gray-500">
+        <td className="border-2 border-gray-500">{rule.name}</td>
         <td
           className="border-2 border-gray-500"
           dangerouslySetInnerHTML={{ __html: rule.description }}
@@ -269,8 +305,8 @@ function App() {
   </thead>
   <tbody>
     {results.new.map((rule) => (
-      <tr key={rule.displayName} className="border-2 border-gray-500">
-        <td className="border-2 border-gray-500">{rule.displayName}</td>
+      <tr key={rule.name} className="border-2 border-gray-500">
+        <td className="border-2 border-gray-500">{rule.name}</td>
         <td
           className="border-2 border-gray-500"
           dangerouslySetInnerHTML={{ __html: rule.description }}
@@ -292,13 +328,13 @@ function App() {
     <tr className="border-2 border-gray-500">
       <th className="border-2 border-gray-500">Rule Name</th>
       <th className="border-2 border-gray-500">Description</th>
-      <th className="border-2 border-gray-500">DB Data</th>
+      <th className="border-2 border-gray-500 min-w-[300px]">DB Data</th>
     </tr>
   </thead>
   <tbody>
     {enrichedMatched.map((rule) => (
-      <tr key={rule.displayName} className="border-2 border-gray-500">
-        <td className="border-2 border-gray-500">{rule.displayName}</td>
+      <tr key={rule.name} className="border-2 border-gray-500">
+        <td className="border-2 border-gray-500">{rule.name}</td>
         <td
           className="border-2 border-gray-500"
           dangerouslySetInnerHTML={{ __html: rule.description }}
