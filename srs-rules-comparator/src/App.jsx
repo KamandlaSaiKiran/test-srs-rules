@@ -224,7 +224,7 @@ function App() {
     <div>
       <div className="navbar bg-primary text-primary-content">
         <div className="flex justify-center w-full ">
-          <a className="btn btn-ghost text-xl">SRS RULES COMPARE TOOL</a>
+          <a className="btn btn-ghost text-xl">NMS-SRS Rules Upgrade Toolkit</a>
         </div>
       </div>
 
@@ -255,7 +255,22 @@ function App() {
         </button>
 
         {loading && <div className="alert alert-info mt-4">Loading data, please wait...</div>}
-
+          {/* 📊 DASHBOARD SECTION */}
+        <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="card bg-gray-100 p-4 shadow">
+            <div className="text-center text-lg font-semibold">Dropped Rules</div>
+            <div className="text-center text-3xl font-bold text-red-500">{results.dropped.length}</div>
+          </div>
+          <div className="card bg-gray-100 p-4 shadow">
+            <div className="text-center text-lg font-semibold">New Rules</div>
+            <div className="text-center text-3xl font-bold text-green-500">{results.new.length}</div>
+          </div>
+          <div className="card bg-gray-100 p-4 shadow">
+            <div className="text-center text-lg font-semibold">Matched Rules</div>
+            <div className="text-center text-3xl font-bold text-blue-500">{results.matched.length}</div>
+          </div>
+        </div>
+        {/* 📊 DASHBOARD SECTION */}
         <div className="mt-10">
           <h3 className="text-lg font-bold flex items-center">
             Dropped Rules
